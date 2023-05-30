@@ -1,0 +1,608 @@
+//---------------------------------------------------------------------------------- Lesson 1 (Install laravel , Breeze)
+1) composer create-project laravel/laravel:^9.0 example-app
+2) composer require laravel/breeze:1.* --dev    //Laravel Breeze is a minimal, simple implementation of all of Laravel
+3) php artisan breeze:install                   //Which stack would you like to install? 1-blade 2-react 3-vue 4-api
+  Would you like to install dark mode support? (yes/no) [no]
+❯ yes
+  Would you prefer Pest tests instead of PHPUnit? (yes/no) [no]
+❯ yes
+"config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "allow-plugins": {
+        "pestphp/pest-plugin": true, //*** insert in composer.json/config -> allow php artisan breeze:install درون خطا ترمینال هست
+        "symfony/thanks": true       //*** insert in composer.json/config -> allow php artisan breeze:install درون خطا ترمینال هست
+    }
+},
+
+4) php artisan migrate
+5) npm install                       //install node_modules
+6) npm run dev                       //**** ) npm run build (best sun live without again)  +  run live (but run again)
+//npm run dev -> create in public -> public/js/app.js + public/css/app.css
+
+7) npm run build -> before ->
+npm install --save-dev vite laravel-vite-plugin      //before npm run build
+npm install --save-dev @vitejs/plugin-vue           //before npm run build
+
+Then updated package.json:
+"scripts": {
+    "dev": "npm run development",
+    "build": "vite build",  //*** update and insert to package.json -> script
+}
+npm run build
+
+
+
+
+
+
+//-------------------- database/migrations/2014_10_12_000000_create_users_table.php
+public function up()
+{
+    Schema::create('users', function (Blueprint $table) {
+        $table->id();
+        $table->string('name')->nullable();
+        $table->string('user_name', 50)->nullable();
+        $table->string('mobile')->unique()->nullable();
+        $table->string('email')->unique()->nullable();
+        $table->string('phone')->unique()->nullable();
+        $table->string('photo')->nullable();
+        $table->boolean('is_admin')->default(false);
+        $table->string('status')->default(\App\Enums\UserStatus::Active->value);
+        $table->timestamp('email_verified_at')->nullable();
+        $table->string('password');
+        $table->rememberToken();
+        $table->timestamps();
+    });
+}
+
+
+
+//-------------------- app/Enums/UserStatus.php     //enum دستی میسازیم پوشه و کلاس  +  control enum in class php (no migration)
+<?php
+namespace App\Enums;
+
+enum UserStatus: string
+{
+    case Active = 'active';  //1)name  2)value
+    case InActive = 'inactive';
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------- Lesson 2 (Config, partials project)
+1) public/panel(dont name admin for security)/assets+vendor     //dont name admin for security
+2) resources/views/admin/layouts(partials فایل  های بدنه و ییلد) + master
+
+
+
+//-------------------- routes/web.php
+//----- Panel admin:
+Route::middleware('auth')->group(function () {
+    Route::get('/admin' , function () {
+       return view('admin.index');
+    });
+});
+
+
+
+//-------------------- resources/views/admin/layouts/master.blade.php
+<link rel="shortcut icon" href="{{ asset('panel/assets/media/image/favicon.png') }}">
+<meta name="theme-color" content="#5867dd">
+<link rel="stylesheet" href="{{ asset('panel/vendors/bundle.css') }}" type="text/css">
+<link rel="stylesheet" href="{{ asset('panel/vendors/slick/slick.css') }}">
+<link rel="stylesheet" href="{{ url('panel/vendors/slick/slick-theme.css') }}">
+<link rel="stylesheet" href="{{ url('panel/vendors/vmap/jqvmap.min.css') }}">
+<link rel="stylesheet" href="{{ url('panel/assets/css/app.css') }}" type="text/css">
+
+<img class="large-logo" src="{{ asset('panel/assets/media/image/login.png') }}" alt="image">
+<img class="small-logo" src="{{ asset('panel/assets/media/image/logo-sm.png') }}" alt="image">
+<img class="dark-logo" src="{{ asset('panel/assets/media/image/logo-dark.png') }}" alt="image">
+
+<script src="{{ url('panel/vendors/bundle.js') }}"></script>
+<script src="{{ url('panel/vendors/slick/slick.min.js') }}"></script>
+<script src="{{ url('panel/vendors/vmap/jquery.vmap.min.js') }}"></script>
+<script src="{{ asset('panel/assets/js/app.js') }}"></script>
+
+
+
+
+//-------------------- resources/views/admin/layouts/header.blade.php + navigation
+<div class="header">
+
+    <!-- begin::header logo -->
+    <div class="header-logo">
+        <a href="#">
+            <img class="large-logo" src="{{ asset('panel/assets/media/image/login.png') }}" alt="image">
+            <img class="small-logo" src="{{ asset('panel/assets/media/image/logo-sm.png') }}" alt="image">
+            <img class="dark-logo" src="{{ asset('panel/assets/media/image/logo-dark.png') }}" alt="image">
+        </a>
+    </div>
+    <!-- end::header logo -->
+
+</div>
+
+
+
+//-------------------- resources/views/admin/index.blade.php      //@yield -> page change in prooject
+@extends('admin.layouts.master')
+@section('title' , 'قالب مدیریتی')
+
+@section('content')
+<main class="main-content">
+    <div class="row">
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="font-weight-bold m-b-10 line-height-30 primary-font">1</h2>
+                            <h6 class="mb-2 font-size-13 text-primary font-weight-bold primary-font">تعداد
+                                کاربران</h6>
+                        </div>
+
+
+        <div class="container">
+            <h6 class="card-title">ایجاد کاربر</h6>
+            <form method="POST">
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">نام و نام خانوادگی</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control text-left" placeholder="نام و نام خانوادگی"
+                               dir="rtl" name="name">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">ایمیل</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control text-left" placeholder="ایمیل" dir="rtl"
+                               name="email">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">موبایل</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control text-left" placeholder="موبایل" dir="rtl"
+                               name="mobile">
+                    </div>
+                </div>
+    </main>
+@endsection
+
+
+
+
+
+//-------------------- resources/views/admin/layouts/master.blade.php      //file important
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>@yield('title')</title>
+    <link rel="shortcut icon" href="{{ asset('panel/assets/media/image/favicon.png') }}">
+    <meta name="theme-color" content="#5867dd">
+    <link rel="stylesheet" href="{{ asset('panel/vendors/bundle.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ asset('panel/vendors/slick/slick.css') }}">
+    <link rel="stylesheet" href="{{ url('panel/vendors/slick/slick-theme.css') }}">
+    <link rel="stylesheet" href="{{ url('panel/vendors/vmap/jqvmap.min.css') }}">
+    <link rel="stylesheet" href="{{ url('panel/assets/css/app.css') }}" type="text/css">
+</head>
+
+<body class="small-navigation">
+
+<!-- begin::navigation -->
+@include('admin.layouts.navigation')   //page const
+<!-- end::navigation -->
+
+<!-- begin::header -->
+@include('admin.layouts.header')       //page const
+<!-- end::header -->
+
+<!-- begin::main content -->
+@yield('content')  {{-- page change in project --}}
+<!-- end::main content -->
+
+<!-- begin::footer -->
+<script src="{{ url('panel/vendors/bundle.js') }}"></script>
+<script src="{{ url('panel/vendors/slick/slick.min.js') }}"></script>
+<script src="{{ url('panel/vendors/vmap/jquery.vmap.min.js') }}"></script>
+<script src="{{ asset('panel/assets/js/app.js') }}"></script>
+<!-- end::footer -->
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 3 ()
+1) app/Providers/RouteServiceProvider.php  ->  public const HOME = '/admin';  //next page login to show user
+2) composer require livewire/livewire
+3) insert @livewireStyles , @livewireScripts in master.blade.php
+...
+    @livewireStyles
+</head>
+<body>
+    ...
+
+    @livewireScripts
+</body>
+</html>
+
+4) php artisan livewire:publish --config    //insert -> config/livewire.php + Create a component
+5) php artisan livewire:publish --assets    //insert -> codyadStoreWatch\vendor\livewire\livewire\dist
+6) composer.json file:
+{
+   "scripts": {
+       "post-autoload-dump": [
+           "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+           "@php artisan package:discover --ansi",
+           *"@php artisan vendor:publish --force --tag=livewire:assets --ansi"
+       ]
+   }
+}
+7) composer dump-autoload + composer du //update composer.json
+8) php artisan make:livewire counter    //install view->resources/views/livewire  +  app/Http/Livewire
+
+//---------- git
+1) git init
+2) git add . + -A + all
+3) git commit -m "first commit"
+4) git branch -M main
+5) git remote add origin https://github.com/mahdi99k/watchstore.git
+6) git push -u origin main
+
+
+
+
+
+
+
+
+//-------------------- app/Providers/RouteServiceProvider.php
+//  public const HOME = '/dashboard';
+    public const HOME = '/admin';  //next page login to show user
+
+
+//-------------------- resources/views/admin/layouts/master.blade.php
+...
+    @livewireStyles    //insert @livewireStyles close tag head
+</head>
+<body>
+    ...
+
+    @livewireScripts    //insert @livewireScripts close tag body
+</body>
+</html>
+
+//----- same code up
+<livewire:styles />
+...
+<livewire:scripts />
+
+
+
+
+//-------------------- package.json
+"scripts": {
+    "post-autoload-dump": [
+        "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+        "@php artisan package:discover --ansi",
+        "@php artisan vendor:publish --force --tag=livewire:assets --ansi"
+    ],
+
+
+
+//-------------------- git
+echo "# watchstore" >> README.md
+git init
+git add . + -A + all
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/mahdi99k/watchstore.git
+git push -u origin main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------------------------------------------ Lesson 4 (User part 1)
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------------------- Lesson 5 (User part 2)
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------------------- Lesson 6 (User part 3)
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 7 ()
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 8 ()
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 9 ()
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 10 ()
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------------------------------------------------------ IMPORTANT
+1)
+20
+3)
+
+
+
+//--------------------
+
+
+//--------------------
+
