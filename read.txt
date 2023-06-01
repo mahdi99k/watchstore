@@ -334,7 +334,6 @@ Route::middleware('auth')->group(function () {
     ],
 
 
-
 //-------------------- git
 echo "# watchstore" >> README.md
 git init
@@ -365,19 +364,127 @@ git push -u origin main
 
 
 
-
-
 //------------------------------------------------------------------------------------------------ Lesson 4 (User part 1)
-1)
-20
+1) php artisan make:controller Admin/PanelController
+2) php artisan make:controller Admin\USerController -r    //-r -> resource
 3)
+4)
+5)
 
 
 
-//--------------------
+//-------------------- routes/web.php
+Route::middleware('auth')->group(function () {
+    Route::get('/admin' , [PanelController::class , 'index']);
+    Route::resource('/admin/users' , USerController::class);
+});
 
 
-//--------------------
+
+//-------------------- app/Http/Controllers/Admin/PanelController.php
+public function index()
+{
+    return view('admin.index');
+}
+
+
+
+//-------------------- app/Http/Controllers/Admin/USerController.php
+public function index()
+{
+    $users = User::query()->paginate(15);
+    return view('admin.user.list', compact('users'));
+}
+
+public function create()
+{
+    return view('admin.user.create');
+}
+
+
+
+
+//-------------------- resources/views/admin/layouts/navigation.blade.php
+<div class="navigation-menu-body">
+    <ul id="users">
+        <li>
+            <a href="#">کاربران</a>
+            <ul>
+                <li><a href="{{ route('users.create') }}">ایجاد کاربر</a></li>
+                <li><a href="{{ route('users.index') }}">لیست کاربران</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
+
+
+
+
+//-------------------- app/Models/User.php
+protected $fillable = [
+    'name',
+    'user_name',
+    'mobile',
+    'email',
+    'phone',
+    'photo',
+    'is_admin',
+    'status',
+    'password',
+];
+
+
+
+//-------------------- resources/views/admin/user/list.blade.php
+@foreach ($users as $index => $user)
+    <tr>
+        <td class="text-center align-middle">{{ $users->firstItem() + $index }}</td>
+        <td class="text-center align-middle">
+            <figure class="avatar avatar">
+                <img src="" class="rounded-circle" alt="image">
+            </figure>
+        </td>
+        <td class="text-center align-middle">{{ $user->name }}</td>
+        <td class="text-center align-middle">{{ $user->email }}</td>
+        <td class="text-center align-middle">{{ $user->mobile }}</td>
+        <td class="text-center align-middle">
+            <a class="btn btn-outline-info" href="#">
+                نقش های کاربر
+            </a>
+        </td>
+
+        <td class="text-center align-middle">
+            @if ($user->status == \App\Enums\UserStatus::Active->value)
+                <span class="cursor-pointer badge badge-success p-2">فعال</span>
+            @else
+                <span class="cursor-pointer badge badge-danger p-2">غیر فعال</span>
+            @endif
+        </td>
+
+        <td class="text-center align-middle">
+            <a class="btn btn-outline-info" href="#">ویرایش</a>
+        </td>
+
+        <td class="text-center align-middle">
+            {{ \Hekmatinasser\Verta\Verta::instance($user->created_at)->format('%d %B، %Y') }}
+        </td> {{-- output دی 7، 1395 --}}
+    </tr>
+@endforeach
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -398,7 +505,7 @@ git push -u origin main
 
 
 //----------------------------------------------------------------------------------------------- Lesson 5 (User part 2)
-1)
+1) composer require hekmatinasser/verta        //date -> convert -> jalali
 20
 3)
 

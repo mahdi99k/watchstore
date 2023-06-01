@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\PanelController;
+use App\Http\Controllers\Admin\USerController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,7 +28,8 @@ require __DIR__.'/auth.php';
 
 //-------------------- Panel admin:
 Route::middleware('auth')->group(function () {
-    Route::get('/admin' , function () {
-       return view('admin.index');
-    });
+    Route::get('/admin' , [PanelController::class , 'index']);
+    Route::resource('/admin/users' , USerController::class);
 });
+
+
