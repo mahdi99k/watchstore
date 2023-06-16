@@ -23,7 +23,6 @@
     <div class="navigation-menu-body">
 
         <ul id="users">
-
             <li>
                 <a href="#">کاربران</a>
                 <ul>
@@ -40,10 +39,15 @@
                 </ul>
             </li>
 
+            <li>
+                <a href="#">لاگ ها</a>
+                <ul>
+                    <li><a href="{{ route('logs.index') }}">لیست لاگ ها</a></li>
+                </ul>
+            </li>
         </ul>
 
         <ul id="users">
-
             @hasanyrole('مدیر سایت')
             <li>
                 <a href="#">کاربران</a>
@@ -63,7 +67,6 @@
                 </ul>
             </li>
             @endhasanyrole
-
         </ul>
 
 

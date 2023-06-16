@@ -1371,10 +1371,66 @@ Route::prefix('admin')->middleware('auth')->group(function () {
 
 
 
-//--------------------
+//-------------------- routes/web.php
+Route::prefix('admin')->middleware('auth')->group(function () {
+    Route::get('/logs' , [LogViewerController::class , 'index'])->name('logs.index');
+});
 
 
-//--------------------
+
+//-------------------- resources/views/admin/logs/index.blade.php
+@extends('admin.layouts.master')
+@section('title' , 'لیست لاگ ها')
+
+@section('content')
+
+    <!-- begin::main content -->
+    <main class="main-content">
+        <div class="row">
+            @if(Session::has('message'))
+                <div class="alert alert-info">
+                    <div>{{session('message')}}</div>
+                </div>
+            @endif
+        </div>
+        @include('admin.layouts.errors')
+        <div class="card">
+            <div class="card-body">
+
+                <iframe style="border-width: 0;width: 100%;height: 1000px"
+                        src="{{ route('log-viewer::dashboard') }}" frameborder="0"></iframe>
+            </div>
+        </div>
+    </main>
+    <!-- end::main content -->
+
+@endsection
+
+
+
+
+//-------------------- app/Http/Controllers/Admin/LogViewerController.php
+public function index()
+{
+    $title = 'لیست لاگ ها';
+    return view('admin.logs.index' , compact('title'));
+}
+
+
+//-------------------- resources/views/admin/layouts/navigation.blade.php
+<li>
+    <a href="#">لاگ ها</a>
+    <ul>
+        <li><a href="{{ route('logs.index') }}">لیست لاگ ها</a></li>
+    </ul>
+</li>
+
+
+
+
+
+
+
 
 
 
