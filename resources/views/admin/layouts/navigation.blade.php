@@ -21,7 +21,9 @@
         </ul>
     </div>
     <div class="navigation-menu-body">
+
         <ul id="users">
+
             <li>
                 <a href="#">کاربران</a>
                 <ul>
@@ -29,6 +31,41 @@
                     <li><a href="{{ route('users.index') }}">لیست کاربران</a></li>
                 </ul>
             </li>
+
+            <li>
+                <a href="#">نقش ها</a>
+                <ul>
+                    <li><a href="{{ route('roles.create') }}">ایجاد نقش</a></li>
+                    <li><a href="{{ route('roles.index') }}">لیست نقش ها</a></li>
+                </ul>
+            </li>
+
         </ul>
+
+        <ul id="users">
+
+            @hasanyrole('مدیر سایت')
+            <li>
+                <a href="#">کاربران</a>
+                <ul>
+                    <li><a href="{{ route('users.create') }}">ایجاد کاربر</a></li>
+                    <li><a href="{{ route('users.index') }}">لیست کاربران</a></li>
+                </ul>
+            </li>
+            @endhasanyrole
+
+            @hasanyrole('سرپرست حسابداری ')
+            <li>
+                <a href="#">نقش ها</a>
+                <ul>
+                    <li><a href="{{ route('roles.create') }}">ایجاد نقش</a></li>
+                    <li><a href="{{ route('roles.index') }}">لیست نقش ها</a></li>
+                </ul>
+            </li>
+            @endhasanyrole
+
+        </ul>
+
+
     </div>
 </div>

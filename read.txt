@@ -367,9 +367,6 @@ git push -u origin main
 //------------------------------------------------------------------------------------------------ Lesson 4 (User part 1)
 1) php artisan make:controller Admin/PanelController
 2) php artisan make:controller Admin\USerController -r    //-r -> resource
-3)
-4)
-5)
 
 
 
@@ -441,12 +438,12 @@ protected $fillable = [
         <td class="text-center align-middle">{{ $users->firstItem() + $index }}</td>
         <td class="text-center align-middle">
             <figure class="avatar avatar">
-                <img src="" class="rounded-circle" alt="image">
+                <img src="{{ url("images/admin/users/big/" . $user->photo) }}" class="rounded-circle" alt="image">
             </figure>
         </td>
         <td class="text-center align-middle">{{ $user->name }}</td>
         <td class="text-center align-middle">{{ $user->email }}</td>
-        <td class="text-center align-middle">{{ $user->mobile }}</td>
+        <td class="text-center align-middle">{{ $user->phone }}</td>
         <td class="text-center align-middle">
             <a class="btn btn-outline-info" href="#">
                 نقش های کاربر
@@ -504,10 +501,873 @@ protected $fillable = [
 
 
 
+
+
+
+
+
+
+
+
 //----------------------------------------------------------------------------------------------- Lesson 5 (User part 2)
+*) composer require intervention/image    //create image + resize image , customize, ...
+*) 'providers' => [
+       // ...
+       'Intervention\Image\ImageServiceProvider',
+   ]
+*) 'aliases' => [
+       // ...
+       'Image' => 'Intervention\Image\Facades\Image',
+   ]
+*) php artisan vendor:publish --provider="Intervention\Image\ImageServiceProviderLaravelRecent"
+
 1) composer require hekmatinasser/verta        //date -> convert -> jalali
-20
-3)
+2) php artisan make:livewire admin\users
+3) php artisan make:request Admin/CreateUserRequest
+4) php artisan make:request Admin/EditUserRequest
+*) xampp/php/php.init -> ;extension=gd  -> extension=gd برمیداریم
+
+
+
+
+
+//-------------------- app/Http/Controllers/Admin/UserController.php  //
+class USerController extends Controller
+{
+
+    public function index()
+    {
+//      $users = User::query()->paginate(15);
+        $title = 'لیست کاربران';  //show breadcrumb
+        return view('admin.user.list' , compact('title'));  //change laravel to livewire
+    }
+
+
+    public function create()
+    {
+        $title = "ایجاد کاربر";  //show breadcrumb
+        return view('admin.user.create' , compact('title'));
+    }
+
+
+    public function store(CreateUserRequest $request)
+    {
+        //database => input(blade)
+        $image = User::saveImage($request->get('file'));
+        User::query()->create([
+            'name' => $request->input('name'),
+            'email' => $request->email,
+            'phone' => $request->get('mobile'),
+            'password' => Hash::make($request->input('password')),
+            'photo' => $image
+        ]);
+        return redirect()->back()->with('message', 'کاربر جدید با موفقیت ثبت شد');  //with(session flash یک بار مصرف) -> key , value
+    }
+
+    public function edit(User $user)
+    {
+//      $user = User::query()->find($id);    //هم این مدلی درسته + هم مادل بایدینگ
+        $title = 'ویرایش کاربر';
+        return view('admin.user.edit', compact('user' , 'title'));
+    }
+
+
+    public function update(EditUserRequest $request, $id)
+    {
+        $user = User::query()->find($id);
+//      $image = User::SaveImage($request->file);
+
+        $user->update([
+            'name' => $request->input('name'),
+            'email' => $request->email,
+            'phone' => $request->get('mobile'),
+            'password' => $request->input('password') ? Hash::make($request->input('password')) : $user->password,
+//            'photo' => $image,
+        ]);
+
+        return redirect()->route('users.index')->with('message', 'کاربر با موفقیت ویرایش شد');  //with(session flash یک بار مصرف) -> key , value
+    }
+
+}
+
+
+
+
+//-------------------- app/Http/Controllers/Admin/PanelController.php
+public function index()
+{
+    $title = 'پنل مدیریت';
+    return view('admin.index' , compact('title'));
+}
+
+
+
+//-------------------- resources/views/admin/user/create.blade.php
+<form method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data">
+@csrf
+
+@include('admin.layouts.errors')  {{-- show eerors --}}
+
+<div>
+    @if (\Illuminate\Support\Facades\Session::has('message'))  {{-- flash = سشن یک بار مصرف --}}
+        <div class="alert alert-success">
+            <div>{{ Session('message') }}</div>
+        </div>
+    @endif
+</div>
+
+
+
+//-------------------- config/filesystems.php
+'disks' => [
+
+    'local' => [
+        'driver' => 'local',
+        'root' => public_path('images'),   //storage_path -> change -> public_path
+    ],
+
+    'private' => [                         //local -> change -> private
+        'driver' => 'local',
+        'root' => storage_path('app'),
+    ],
+
+
+
+
+
+//-------------------- change laravel to livewire  +  resources/views/admin/user/list.blade.php
+@extends('admin.layouts.master')
+@section('title' , 'لیست کاربران')
+
+@section('content')
+    <main class="main-content">
+
+        <div class="card">
+            <div class="card-body">
+                <livewire:admin.users/>  {{-- include livewire --}}
+            </div>
+        </div>
+
+    </main>
+@endsection
+
+
+
+
+
+
+//-------------------- resources/views/livewire/admin/users.blade.php
+<div class="table overflow-auto" tabindex="8">
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label">عنوان جستجو</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control text-left" dir="rtl"
+                   wire:model="search"> {{-- وایر مادل یعنی فانکشنی که درون کنترلر لایووایر بنویسیم --}}
+        </div>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead class="thead-light">
+        <tr>
+            <th class="text-center align-middle text-primary">ردیف</th>
+            <th class="text-center align-middle text-primary">عکس</th>
+            <th class="text-center align-middle text-primary">نام و نام خانوادگی</th>
+            <th class="text-center align-middle text-primary">ایمیل</th>
+            <th class="text-center align-middle text-primary">موبایل</th>
+            <th class="text-center align-middle text-primary">نقش های کاربر</th>
+            <th class="text-center align-middle text-primary"> وضعیت</th>
+            <th class="text-center align-middle text-primary">ویرایش</th>
+            <th class="text-center align-middle text-primary">تاریخ ایجاد</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        @foreach ($users as $index => $user)  {{-- key => value --}}  {{-- name databse (not input) --}}
+        <tr>
+            {{-- firstItem = شمارش ردیف + دونه دونه اضافه بشه ایندکس یا کی --}}
+            <td class="text-center align-middle">{{ $users->firstItem() + $index }}</td>
+            <td class="text-center align-middle">
+                <figure class="avatar avatar">
+                    <img src="{{ url("images/admin/users/big/" . $user->photo) }}" class="rounded-circle" alt="image">
+                </figure>
+            </td>
+            <td class="text-center align-middle">{{ $user->name }}</td>
+            <td class="text-center align-middle">{{ $user->email }}</td>
+            <td class="text-center align-middle">{{ $user->phone }}</td>
+            <td class="text-center align-middle">
+                <a class="btn btn-outline-info" href="#">نقش های کاربر</a>
+            </td>
+
+            <td class="text-center align-middle" wire:click="changeUserStatus({{ $user->id }})">  {{-- function+id user --}}
+                @if ($user->status == \App\Enums\UserStatus::Active->value)
+                    <span class="cursor-pointer badge badge-success p-2">فعال</span>
+                @else
+                    <span class="cursor-pointer badge badge-danger p-2">غیر فعال</span>
+                @endif
+            </td>
+
+            <td class="text-center align-middle">
+                <a class="btn btn-outline-info" href="{{ route('users.edit' , $user->id) }}">ویرایش</a> {{-- edit + id(parameters) --}}
+            </td>
+
+            <td class="text-center align-middle">
+                {{ \Hekmatinasser\Verta\Verta::instance($user->created_at)->format('%d %B، %Y') }}
+            </td> {{-- output دی 7، 1395 --}}
+        </tr>
+        @endforeach
+
+    </table>
+    <div style="margin: 40px !important;"
+         class="pagination pagination-rounded pagination-sm d-flex justify-content-center">
+        {{--  {{ $users->links() }}  --}}
+        {{ $users->appends(\Illuminate\Support\Facades\Request::except('page'))->links() }}
+        {{-- در صفحه 5 باشیم رفرش بشه دیگه همون صفحه میمونه برنمیگرده صفحه اول و خطا نمیده --}}
+    </div>
+</div>
+
+
+
+
+
+
+//-------------------- app/Http/Livewire/Admin/Users.php
+class Users extends Component
+{
+    use WithPagination;  //show class
+
+    protected $paginationTheme = 'bootstrap';  //show pagination in livewire
+    public $search;
+
+
+    public function render()
+    {
+        $users = User::query()
+            ->where('name', 'like', '%' . $this->search . '%')  //database -> name
+            ->orWhere('phone', 'like', '%' . $this->search . '%')
+            ->orWhere('email' , 'like' , '%' . $this->search . '%')
+            ->paginate(15);
+        return view('livewire.admin.users', compact('users'));
+    }
+
+    public function changeUserStatus($id)
+    {
+        $user = User::query()->find($id);
+        if ($user->status == UserStatus::Active->value) {  /* if active -> change -> inactive ... اگر فعال بود تغییر بده به غیر فعال و برعکس  */
+            $user->update([
+                'status' => UserStatus::InActive->value
+            ]);
+        } else {
+            $user->update([
+                'status' => UserStatus::Active->value
+            ]);
+        }
+
+    }
+
+}
+
+
+
+//-------------------- resources/views/admin/user/edit.blade.php
+@extends('admin.layouts.master')
+@section('title' , 'ویرایش کاربر')
+
+@section('content')
+    <main class="main-content">
+
+        @include('admin.layouts.errors')  {{-- show eerors --}}
+
+
+        <div class="card">
+            <div class="card-body">
+                <div class="container">
+                    <h6 class="card-title">ویرایش کاربر</h6>
+                    <form method="POST" action="{{ route('users.update' , $user->id) }}" enctype="multipart/form-data">
+                        @csrf
+                        @method('PATCH')
+
+                        <div>
+                            @if (\Illuminate\Support\Facades\Session::has('message'))  {{-- flash = سشن یک بار مصرف --}}
+                            <div class="alert alert-success">
+                                <div>{{ Session('message') }}</div>
+                            </div>
+                            @endif
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">نام و نام خانوادگی</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control text-left" dir="rtl" name="name" value="{{ $user->name }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">ایمیل</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control text-left" dir="rtl" name="email" value="{{ $user->email }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">موبایل</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control text-left" dir="rtl" name="mobile" value="{{ $user->phone }}">
+                            </div>
+                        </div>
+
+                        {{--<div class="form-group row">
+                            <label class="col-sm-2 col-form-label">پسورد</label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control text-left" dir="rtl" name="password">
+                            </div>
+                        </div>--}}
+
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label" for="file"> آپلود عکس </label>
+                            <input class="col-sm-10" type="file" class="form-control-file" id="file" name="file" value="{{ $user->photo }}">
+                        </div>
+
+                        <div class="form-group row">
+                            <button name="submit" type="submit" class="btn btn-info btn-uppercase">
+                                <i class="ti-check-box m-r-5"></i> ویرایش
+                            </button>
+
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+@endsection
+
+
+
+//-------------------- app/Providers/AppServiceProvider.php
+public function boot()
+{
+    //Paginator::useBootstrapFive();   //for laravel
+}
+
+
+
+
+
+//-------------------- app/Http/Requests/Admin/CreateUserRequest.php
+    public function authorize()
+    {
+        return true;
+    }
+
+    public function rules()
+    {
+        return [
+            //request->name input  =>  database(condition validation)
+            'name' => 'required|string|max:100',
+            'mobile' => 'required|max:11|unique:users,phone',
+            'email' => 'required|email|max:200|unique:users,email',
+            'password' => 'required|min:6'
+        ];
+    }
+
+
+//-------------------- app/Http/Requests/Admin/EditUserRequest.php
+return [
+    //request->name input  =>  database(condition validation)
+    'name' => 'required|string|max:100',
+    'mobile' => 'required|max:11|unique:users,phone,' . $this->user,  //unique phone (except self user منحصر به فرد باش موبایل به جز خودش)
+    'email' => 'required|email|max:200|unique:users,email,' .$this->user,  //unique email (except self user منحصر به فرد باش ایمیل به جز خودش)
+];
+
+
+
+//-------------------- app/Models/User.php (saveImage)
+
+
+
+//-------------------- resources/views/admin/layouts/errors.blade.php
+@if ($errors->any())  {{-- هر نوع خطایی --}}
+<div class="alert alert-danger">
+    <ul>
+        @foreach ($errors->all() as $error)  {{-- all error تمامی خطا ها بگیر --}}
+        <li class="text-center">{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
+
+
+
+//-------------------- resources/views/admin/layouts/master.blade.php
+@include('admin.layouts.header' , [$title => $title ?? ''])  {{-- show breadcrumb page other --}}
+
+
+
+//-------------------- resources/views/admin/layouts/header.blade.php  ->  (show breadcrumb)
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">داشبورد</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ $title }}</li>
+    </ol>
+</nav>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//-------------------------------------------------------------------------------------- Lesson 8 (User-role permission)
+1) composer require spatie/laravel-permission     //package permission
+2) php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+3) php artisan optimize:clear    #or    php artisan config:clear
+4) php artisan migrate
+5) // The User model requires this trait    //model User
+   use Spatie\Permission\Traits\HasRoles;
+   use HasRoles;
+
+6) php artisan make:livewire Admin/Roles
+7) php artisan make:request Admin/RoleRequest
+8)
+
+
+
+
+//-------------------- routes/web.php
+Route::prefix('admin')->middleware('auth')->group(function () {
+    Route::get('/' , [PanelController::class , 'index']);
+    Route::resource('/users' , USerController::class);
+    Route::resource('/roles' , RoleController::class);
+});
+
+
+
+//-------------------- app/Http/Controllers/Admin/RoleController.php
+use Spatie\Permission\Models\Role;
+
+
+class RoleController extends Controller
+{
+
+    public function index()
+    {
+//      $users = User::query()->paginate(15);
+        $title = 'لیست نقش ها';  //show breadcrumb
+        return view('admin.role.list' , compact('title'));  //change laravel to livewire
+    }
+
+
+    public function create()
+    {
+        $title = "ایجاد نقش";  //show breadcrumb
+        return view('admin.role.create' , compact('title'));
+    }
+
+
+    public function store(RoleRequest $request)
+    {
+        //database => input(blade)
+        Role::query()->create([
+            'name' => $request->input('name'),
+        ]);
+        return redirect()->route('users.index')->with('message', 'نقش کاربر با موفقیت ثبت شد');  //with(session flash یک بار مصرف) -> key , value
+    }
+
+
+    public function edit(Role $role)
+    {
+        $title = 'ویرایش نقش';
+        $role = Role::query()->find($role->id);
+        return view('admin.role.edit', compact('role' , 'title'));
+    }
+
+
+    public function update(Request $request, $id)
+    {
+        $role = Role::query()->find($id);
+
+        $role->update([
+            'name' => $request->input('name'),
+        ]);
+
+        return redirect()->route('roles.index')->with('message', 'نقش کاربر با موفقیت ویرایش شد');  //with(session flash یک بار مصرف) -> key , value
+    }
+
+}
+
+
+
+
+
+
+//-------------------- resources/views/admin/role/list.blade.php
+@extends('admin.layouts.master')
+{{--@section('title' , 'لیست کاربران')--}}
+
+@section('content')
+    <main class="main-content">
+
+        <div>
+            @if (\Illuminate\Support\Facades\Session::has('message'))  {{-- flash = سشن یک بار مصرف --}}
+            <div class="alert alert-success">
+                <div>{{ Session('message') }}</div>
+            </div>
+            @endif
+        </div>
+
+
+        <div class="card">
+            <div class="card-body">
+                <livewire:admin.roles/>  {{-- include livewire --}}
+            </div>
+        </div>
+
+    </main>
+@endsection
+]
+
+
+
+//-------------------- resources/views/admin/role/create.blade.php
+<h6 class="card-title">ایجاد نقش کاربر</h6>
+<form role="form" method="POST" action="{{ route('roles.store') }}">
+    @csrf
+    <div class="card-body">
+        <div class="row">
+            <div class="col-6 offset-3">
+                <div class="list-group" id="list-tab" role="tablist">
+
+                    <div class="form-group row">
+                        <label class="col-sm-2 col-form-label">نام نقش</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control text-left" dir="rtl" name="name">
+                        </div>
+                    </div>
+
+
+
+
+//-------------------- resources/views/livewire/admin/roles.blade.php
+<div class="table overflow-auto" tabindex="8">
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label">عنوان جستجو</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control text-left" dir="rtl"
+                   wire:model="search"> {{-- وایر مادل یعنی فانکشنی که درون کنترلر لایووایر بنویسیم --}}
+        </div>
+    </div>
+    <table class="table table-striped table-hover">
+        <thead class="thead-light">
+        <tr>
+            <th class="text-center align-middle text-primary">ردیف</th>
+            <th class="text-center align-middle text-primary">نام نقش</th>
+            <th class="text-center align-middle text-primary">ویرایش</th>
+            <th class="text-center align-middle text-primary">تاریخ ایجاد</th>
+        </tr>
+        </thead>
+        <tbody>
+
+
+        @foreach ($roles as $index => $role)  {{-- key => value --}}  {{-- name databse (not input) --}}
+        <tr>
+            {{-- firstItem = شمارش ردیف + دونه دونه اضافه بشه ایندکس یا کی --}}
+            <td class="text-center align-middle">{{ $roles->firstItem() + $index }}</td>
+            <td class="text-center align-middle">{{ $role->name }}</td>
+            <td class="text-center align-middle">
+                <a class="btn btn-outline-info" href="{{ route('roles.edit' , $role->id) }}">ویرایش</a> {{-- edit + id(parameters) --}}
+            </td>
+            <td class="text-center align-middle">
+                {{ \Hekmatinasser\Verta\Verta::instance($role->created_at)->format('%d %B، %Y') }}
+            </td> {{-- output دی 7، 1395 --}}
+        </tr>
+        @endforeach
+
+
+    </table>
+    <div style="margin: 40px !important;"
+         class="pagination pagination-rounded pagination-sm d-flex justify-content-center">
+        {{--  {{ $roles->links() }}  --}}
+        {{ $roles->appends(\Illuminate\Support\Facades\Request::except('page'))->links() }}
+        {{-- در صفحه 5 باشیم رفرش بشه دیگه همون صفحه میمونه برنمیگرده صفحه اول و خطا نمیده --}}
+    </div>
+</div>
+
+
+
+
+
+
+//-------------------- app/Http/Livewire/Admin/Roles.php
+class Roles extends Component
+{
+
+    use WithPagination; //show class
+
+    protected $paginationTheme = 'bootstrap';  //show pagination in livewire
+    public $search;
+
+    public function render()
+    {
+        $roles = Role::query()
+            ->where('name', 'like', '%' . $this->search . '%')  //database -> name
+            ->paginate(10);
+        return view('livewire.admin.roles', compact('roles'));
+    }
+
+}
+
+
+
+
+//-------------------- resources/views/admin/layouts/navigation.blade.php
+<ul id="users">
+    <li>
+        <a href="#">کاربران</a>
+        <ul>
+            <li><a href="{{ route('users.create') }}">ایجاد کاربر</a></li>
+            <li><a href="{{ route('users.index') }}">لیست کاربران</a></li>
+        </ul>
+    </li>
+
+    <li>
+        <a href="#">نقش ها</a>
+        <ul>
+            <li><a href="{{ route('roles.create') }}">ایجاد نقش</a></li>
+            <li><a href="{{ route('roles.index') }}">لیست نقش ها</a></li>
+        </ul>
+    </li>
+</ul>
+
+
+
+//--------------------  php artisan make:request Admin/RoleRequest
+public function rules()
+{
+    return [
+        'name' => 'required|string|max:255|unique:roles,name'
+    ];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------------------------------ Lesson 9 (User-role permission 2)
+//-------------------- routes/web.php
+Route::prefix('admin')->middleware('auth')->group(function () {
+    Route::get('/' , [PanelController::class , 'index']);
+    Route::resource('/users' , USerController::class);
+    Route::resource('/roles' , RoleController::class);
+    Route::get('/create_user_roles/{id}' , [USerController::class , 'createUserRoles'])->name('create.user.roles');
+    Route::post('/store_user_roles/{id}' , [USerController::class , 'storeUserRoles'])->name('store.user.roles');
+});
+
+
+
+//-------------------- app/Http/Controllers/Admin/USerController.php
+    public function createUserRoles($id)
+    {
+        $user = User::query()->find($id);
+        $roles = Role::query()->get();  //collection -> show all role in foreach
+        $title = "ایجاد نقش کاربر";  //show breadcrumb
+        return view('admin.user.user_roles', compact('user', 'roles', 'title'));
+    }
+
+
+    public function storeUserRoles(Request $request , $id)
+    {
+        $user = User::find($id);
+        $user->syncRoles($request->roles);  //assignRole() -> create  +  syncRoles() -> update(عملیات ساخت و آپدیت با هم)
+        return redirect()->route('users.index')->with('message' , 'نقش کاربر با موفقیت ویرایش شد');
+    }
+
+
+
+//-------------------- resources/views/livewire/admin/users.blade.php
+<td class="text-center align-middle">
+    <a class="btn btn-outline-info" href="{{ route('create.user.roles' , $user->id) }}">نقش های کاربر</a>
+</td>
+
+
+
+
+//-------------------- resources/views/admin/user/user_roles.blade.php
+@extends('admin.layouts.master')
+@section('title' , 'ایجاد نقش کاربر')
+
+@section('content')
+
+    <!-- begin::main content -->
+    <main class="main-content">
+        <div class="row">
+            @if(Session::has('message'))
+                <div class="alert alert-info">
+                    <div>{{session('message')}}</div>
+                </div>
+            @endif
+        </div>
+        ]
+
+        @include('admin.layouts.errors')
+
+
+        <div class="card">
+            <div class="card-body">
+                <div class="container">
+                    <h6 class="card-title">اتصال کاربر به نقش</h6>
+                    <form role="form" method="POST" action="{{ route('store.user.roles' , $user->id) }}">
+                        @csrf
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6 offset-3">
+
+                                    <div class="list-group" id="list-tab" role="tablist">
+                                        <a class="list-group-item list-group-item-action active" id="list-profile-list"
+                                           data-toggle="list" href="#" role="tab">نقش های کاربر</a>
+
+                                        @foreach ($roles as $role)
+                                            <div class="form-check  d-flex align-items-center">
+                                                <input @if($user->hasRole($role->name)) checked @endif  //این کاربر دارد نقش با این اسم فعالش کن
+                                                type="checkbox" class="form-check-input" id="exampleCheck1"
+                                                       name="roles[]" value="{{ $role->name }}">
+
+                                                <a class="list-group-item list-group-item-action mt-2" for="exampleCheck1"
+                                                   data-toggle="list" href="#" role="tab">{{ $role->name }}</a>
+                                            </div>
+                                        @endforeach
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- /.card-body -->
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary">ثبت</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- end::main content -->
+
+@endsection
+
+
+
+
+//-------------------- resources/views/admin/layouts/navigation.blade.php
+<ul id="users">
+
+    @hasanyrole('مدیر سایت')
+    <li>
+        <a href="#">کاربران</a>
+        <ul>
+            <li><a href="{{ route('users.create') }}">ایجاد کاربر</a></li>
+            <li><a href="{{ route('users.index') }}">لیست کاربران</a></li>
+        </ul>
+    </li>
+    @endhasanyrole
+
+    @hasanyrole('سرپرست حسابداری ')
+    <li>
+        <a href="#">نقش ها</a>
+        <ul>
+            <li><a href="{{ route('roles.create') }}">ایجاد نقش</a></li>
+            <li><a href="{{ route('roles.index') }}">لیست نقش ها</a></li>
+        </ul>
+    </li>
+    @endhasanyrole
+
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------------------- Lesson 10 (log viewer)
+1) composer require arcanedev/log-viewer:^9.*
+2) php artisan log-viewer:publish
+3) php artisan log-viewer:check
+4) php artisan log-viewer:clear  //Clear all generated log files
+5) php artisan make:controller Admin/LogViewerController
 
 
 
@@ -529,9 +1389,15 @@ protected $fillable = [
 
 
 
-//----------------------------------------------------------------------------------------------- Lesson 6 (User part 3)
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 11 ()
 1)
-20
+2)
 3)
 
 
@@ -555,9 +1421,12 @@ protected $fillable = [
 
 
 
-//---------------------------------------------------------------------------------------------- Lesson 7 ()
+
+
+
+//---------------------------------------------------------------------------------------------- Lesson 12 ()
 1)
-20
+2)
 3)
 
 
@@ -585,11 +1454,9 @@ protected $fillable = [
 
 
 
-
-
-//---------------------------------------------------------------------------------------------- Lesson 8 ()
+//---------------------------------------------------------------------------------------------- Lesson 13 ()
 1)
-20
+2)
 3)
 
 
@@ -613,9 +1480,11 @@ protected $fillable = [
 
 
 
-//---------------------------------------------------------------------------------------------- Lesson 9 ()
+
+
+//---------------------------------------------------------------------------------------------- Lesson 14 ()
 1)
-20
+2)
 3)
 
 
@@ -639,12 +1508,9 @@ protected $fillable = [
 
 
 
-
-
-
-//---------------------------------------------------------------------------------------------- Lesson 10 ()
+//---------------------------------------------------------------------------------------------- Lesson 15 ()
 1)
-20
+2)
 3)
 
 
@@ -653,10 +1519,6 @@ protected $fillable = [
 
 
 //--------------------
-
-
-
-
 
 
 
@@ -703,7 +1565,7 @@ protected $fillable = [
 
 //------------------------------------------------------------------------------------------------------------ IMPORTANT
 1)
-20
+2)
 3)
 
 

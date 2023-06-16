@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PanelController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\USerController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -27,9 +28,17 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/auth.php';
 
 //-------------------- Panel admin:
-Route::middleware('auth')->group(function () {
-    Route::get('/admin' , [PanelController::class , 'index']);
-    Route::resource('/admin/users' , USerController::class);
+Route::prefix('admin')->middleware('auth')->group(function () {
+    Route::get('/' , [PanelController::class , 'index']);
+    Route::resource('/users' , USerController::class);
+    Route::resource('/roles' , RoleController::class);
+    Route::get('/create_user_roles/{id}' , [USerController::class , 'createUserRoles'])->name('create.user.roles');
+    Route::post('/store_user_roles/{id}' , [USerController::class , 'storeUserRoles'])->name('store.user.roles');
 });
 
+
+
+//TODO -> upload image -> create + update
+//TODO -> xampp/php/php.init -> ;extension=gd  -> extension=gd برمیداریم
+//TODO -> @hasanyrole('مدیر سایت') -> dont work
 

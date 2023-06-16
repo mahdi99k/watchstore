@@ -4,12 +4,22 @@
 @section('content')
     <main class="main-content">
 
+        @include('admin.layouts.errors')  {{-- show eerors --}}
+
         <div class="card">
             <div class="card-body">
                 <div class="container">
                     <h6 class="card-title">ایجاد کاربر</h6>
                     <form method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data">
                         @csrf
+
+                        <div>
+                            @if (\Illuminate\Support\Facades\Session::has('message'))  {{-- flash = سشن یک بار مصرف --}}
+                                <div class="alert alert-success">
+                                    <div>{{ Session('message') }}</div>
+                                </div>
+                            @endif
+                        </div>
 
                         <div class="form-group row">
                             <label class="col-sm-2 col-form-label">نام و نام خانوادگی</label>
@@ -46,7 +56,7 @@
 
                         <div class="form-group row">
                             <button name="submit" type="submit" class="btn btn-success btn-uppercase">
-                                <i class="ti-check-box m-r-5"></i> ذخیره
+                                <i class="ti-check-box m-r-5"></i> ایجاد
                             </button>
                         </div>
 

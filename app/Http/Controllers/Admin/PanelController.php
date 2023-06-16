@@ -10,7 +10,8 @@ class PanelController extends Controller
 
     public function index()
     {
-        return view('admin.index');
+        $title = 'پنل مدیریت';
+        return view('admin.index' , compact('title'));
     }
 
 }

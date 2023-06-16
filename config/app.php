@@ -82,7 +82,7 @@ return [
     |
     */
 
-    'locale' => 'en',
+    'locale' => 'fa',
 
     /*
     |--------------------------------------------------------------------------
@@ -176,6 +176,8 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        /*---------- Providers me ----------*/
+//      'Intervention\Image\ImageServiceProvider',
 
     ],
 
@@ -192,6 +194,8 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // ...
+        /*---------- aliases me ----------*/
+//      'Image' => 'Intervention\Image\Facades\Image',
     ])->toArray(),
 
 ];

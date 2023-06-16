@@ -22,7 +22,7 @@
 <!-- end::navigation -->
 
 <!-- begin::header -->
-@include('admin.layouts.header')
+@include('admin.layouts.header' , [$title => $title ?? ''])  {{-- show breadcrumb page other --}}
 <!-- end::header -->
 
 @livewireStyles
